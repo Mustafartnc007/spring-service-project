@@ -1,0 +1,97 @@
+Bu projede proje mimarisinin nasıl tasarlandığı ve projedeki fornt-end, back-end mimarisi ve tasarımı detaylıca anlatılmıştır.
+
+   A-) Bu projede veri tabanı olarak postgreSql kullanılmış ve veritabanı docker üzerinden ayağa kaldırılmıştır.
+   B-) Back end ve front end kısmının tamamı intellij idea üzerinde yazılmıştır.
+   C-) Bu projede katmanlı mimari kullanılmıştır 5 tane katman bulunur.
+
+     1-ENTİTİES
+
+       -abstracts
+
+       -concertes
+       (bu classın içerisine varlıklar yazılır veri tabanı tabloları nesne haline getirilir
+       örnek olarak; products classı bu package içerisine yazılır. @table  ve @Entitites anotasyonu class başında kullanılır id nin üzerine @Id,
+       ve her bir sütuna da @column anotasyonları kullanılır tablo ismi çoğul olur örnek: Products.
+       tüm stünlarla ilgili parametreli,parametresiz consturactor ve getter setter işlemi uygulanır. bunları istersek @Data ve @Allconsturactorargs anotasyonlarıyla da otomatik olarak yapabiliriz)
+
+
+
+     2-DATA ACCES
+
+
+       -abstracts
+        (dao(i)) veri tabanına veri ekleme ve veri çekme gibi işlemler burada gerçekleşir. bu interface CRUD işlemleri için JpaRepository classını extend eder. örnek olarak bir product tablosuna CRUD işlemi uygulamak isteyelim.
+        Id ye göre tablo çektiğimiz için <Product,Integer> generic tipi tanımlanır Ör: public interface ProductDao extends JpaRepository<Product,Integer>{ }
+
+
+       -concretes
+
+
+
+     3-BUSSİNES
+
+       -abstract
+       (Service(i)) bussines katmanında iş kuralları tanımlanır. controllerimizin kullanacağı operasyonlar burada tanımlanır.
+       ÖR: public interface ProductService{
+              List<Product> getAll();
+       }
+
+       -concertes
+        (Manager) bu sınıf somut işi yaptığımız yerdir interfacede operasyon tanımlanurken burada operasyon hayata geçirilir. manager sınıfı service sınıfını implemente eder.
+         Biz bu classta Data Acces katmanını kullanacağımız için Data acces katmanının interfacesinin bir objesi oluşturulur ve o objeye başına @Autowired anotasyonu kullanarak bir consturactor oluştururlur.
+         ondan sonra service interfacesinde tanımlandığımız operasyonu burada @Override ederek o operasyonun içerisine yapmak istediğimiz işlemi yazarız.
+                 ÖR:   @Override
+                       List<Product> getAll()
+                       {
+                           return this.productDao.findAll();
+                       }
+
+
+
+     4-API
+
+       -(controller)  Bussines katmanındaki service interfacesinden burada bir nesne oluşturulur ve @Autowired anotasyonu kullanılarak o nesne için consturactor oluşturulur.
+       Bu classın başına @Restcontroller ve @getmapping anotasyonları konulur.
+       Tüm bu aşamalardan sonra classın ana anotasyonları yazıldıktan ve consturactor yoluyla enjekte ettiğimiz service interfacesinden sonra,
+       mapping işlemleri burada yapılır
+       ÖR:
+       @GetMapping("/getall")
+       public List<Product> getAll(){
+           return this.productService.getAll();
+       }
+
+
+
+
+     5-CORE
+     core katmanı bütün projeyi kapsar. tüm katmanlarla doğrudan iletişim kurar. mesela request işleminde kullanıcıya ürün eklendi mesajını response etmek için bir  utilitesResults package i oluşturalım.
+     package oluşturulduktan sonra bu sınıfa 2 tane success ve message adlı parametre tanımlayalım parametreli consturactorlarını ve getterlarını bu classa yazalım.
+     ÖR:
+
+     public class Result {
+
+         //BİR RESULT DÖNDÜRMEK İÇİN GEREKEN PARAMETRELERİ TANIMLADIK
+        private boolean success;
+        private String message;
+
+        //BU PARAMETRELERE PARAMETRELİ CONSTURACTOR YAPTIK
+         public Result(boolean success)
+         {
+             this.success=success;
+         }
+
+         public Result(boolean success,String message)
+         {
+             this.success=success;
+             this.message=message;
+         }
+          //CONSTURACTORLARI YAZDIKTAN SONRA GETTER İŞLEMİ YAPTIK.
+         public boolean isSucces()
+         {
+             return this.success;
+         }
+         public String getMessage()
+         {
+             return  this.message;
+         }
+     }
